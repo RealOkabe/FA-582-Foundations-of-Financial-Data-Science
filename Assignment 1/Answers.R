@@ -1,7 +1,76 @@
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
+library(readxl)
 
+# Problem 1
+brooklyn_data = read_excel("rollingsales_brooklyn.xlsx", skip = 4)
+bronx_data = read_excel("rollingsales_bronx.xlsx", skip = 4)
+manhattan_data = read_excel("rollingsales_manhattan.xlsx", skip = 4)
+statenisland_data = read_excel("rollingsales_statenisland.xlsx", skip = 4)
+queens_data = read_excel("rollingsales_queens.xlsx", skip = 4)
+
+summary(brooklyn_data)
+
+
+housesOfInterest = function(x) {
+  return(grepl("one family|two family|three family|coop|condo", tolower(x$`BUILDING CLASS CATEGORY`)))
+}
+
+brooklyn_data <- brooklyn_data[ housesOfInterest(brooklyn_data), ]
+print(brooklyn_data$`BUILDING CLASS CATEGORY`)
+
+# Cleaning data
+# Just to be safe, removing data about houses with 0 residential units and no houses have price < $100k
+cleanHousingData <- function(x) {
+  na.omit(x)
+  colnames(x) <- sub("\r\n", " ", colnames(x))
+  x <- x[ x$`RESIDENTIAL UNITS` != 0 & 
+            x$`TOTAL UNITS` != 0 & 
+            x$`ZIP CODE` != 0 & 
+            x$`LAND SQUARE FEET` != 0 & 
+            x$`GROSS SQUARE FEET` != 0 & 
+            x$`YEAR BUILT` != 0 & 
+            x$`SALE PRICE` > 100000,
+          ]
+  x <- x[ housesOfInterest(x), ]
+}
+
+brooklyn_data <- cleanHousingData(brooklyn_data)
+bronx_data <- cleanHousingData(bronx_data)
+manhattan_data <- cleanHousingData(manhattan_data)
+statenisland_data <- cleanHousingData(statenisland_data)
+queens_data <- cleanHousingData(queens_data)
+
+# Adding a sale year column for analysis
+getSaleYear <- function(x) {
+  x %>% mutate(`SALE YEAR` = as.integer(format(x$`SALE DATE`, "%Y")))
+}
+
+brooklyn_data <- getSaleYear(brooklyn_data)
+bronx_data <- getSaleYear(bronx_data)
+manhattan_data <- getSaleYear(manhattan_data)
+statenisland_data <- getSaleYear(statenisland_data)
+queens_data <- getSaleYear(queens_data)
+
+# Combine all the data frames into one
+all_data <- rbind(
+  data.frame(SALE_YEAR = brooklyn_data$`SALE YEAR`, SALE_PRICE = brooklyn_data$`SALE PRICE`, BOROUGH = "Brooklyn"),
+  data.frame(SALE_YEAR = bronx_data$`SALE YEAR`, SALE_PRICE = bronx_data$`SALE PRICE`, BOROUGH = "Bronx"),
+  data.frame(SALE_YEAR = manhattan_data$`SALE YEAR`, SALE_PRICE = manhattan_data$`SALE PRICE`, BOROUGH = "Manhattan"),
+  data.frame(SALE_YEAR = statenisland_data$`SALE YEAR`, SALE_PRICE = statenisland_data$`SALE PRICE`, BOROUGH = "Staten Island"),
+  data.frame(SALE_YEAR = queens_data$`SALE YEAR`, SALE_PRICE = queens_data$`SALE PRICE`, BOROUGH = "Queens")
+)
+
+options(repr.plot.width = 10, repr.plot.height = 6)
+
+ggplot(all_data, aes(x = SALE_YEAR, y = SALE_PRICE, color = BOROUGH)) +
+  geom_boxplot() +
+  labs(title = "SALE PRICE Across Boroughs Over SALE YEAR",
+       x = "SALE YEAR",
+       y = "SALE PRICE") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::comma)
 # Problem 2
 # Read data for 3 days and store into variables
 nyt1 <- read.csv("nyt1.csv")
