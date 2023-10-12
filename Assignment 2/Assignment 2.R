@@ -42,3 +42,15 @@ barplot(sectorCounts,
         font.axis = 3,
         horiz = TRUE
         )
+
+# Problem 2
+
+# Read data
+fundamentalsData <- read.csv("fundamentals.csv")
+securitiesData <- read.csv("securities.csv")
+
+# Select 100 random rows from securitiesData
+securitiesData <- securitiesData[sample(nrow(securitiesData), 100), ]
+
+# Filtering fundamentalsData to include Tickers that are present in securitiesData
+fundamentalsData <- fundamentalsData[ fundamentalsData$Ticker.Symbol %in% securitiesData$Ticker.symbol, ]
