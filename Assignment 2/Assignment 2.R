@@ -1,7 +1,7 @@
 library(dplyr)
 library(rvest)
 
-wikiUrl <- "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+wikiUrl <- "https://en.wikipedia.org/wiki/List_ofS%26P_500_companies"
 
 htmlCode <- read_html(wikiUrl)
 
@@ -54,3 +54,80 @@ securitiesData <- securitiesData[sample(nrow(securitiesData), 100), ]
 
 # Filtering fundamentalsData to include Tickers that are present in securitiesData
 fundamentalsData <- fundamentalsData[ fundamentalsData$Ticker.Symbol %in% securitiesData$Ticker.symbol, ]
+
+# Changing Period.Ending from character to Date
+fundamentalsData$Period.Ending <- as.Date(fundamentalsData$Period.Ending, format = "%Y-%m-%d")
+
+# Filtering fundamentalsData to include data from year 2015
+fundamentalsData <- subset(fundamentalsData, format(fundamentalsData$Period.Ending, "%Y") == 2015)
+
+# Select 10 Quantitative columns
+quantitativeColumns <- c(
+  "After.Tax.ROE", "Cash.Ratio", "Cash.and.Cash.Equivalents", 
+  "Current.Ratio", "Gross.Margin", "Gross.Profit", 
+  "Operating.Income", "Pre.Tax.ROE", "Profit.Margin", "Total.Revenue"
+)
+
+quantitativeData <- fundamentalsData[, quantitativeColumns]
+quantitativeData <- na.omit(quantitativeData)
+
+
+# Function to calculate Lp Norm
+calculateLpNorm <- function(x, y, p) {
+  return (sum(abs(x - y) ^ p) ^ (1 / p))
+}
+
+# Function to calculate Lp Similarity
+calculateLpSimilarity <- function(x, y, p) {
+  return (1 / (1 + calculateLpNorm(x, y, p)))
+}
+
+num_columns <- length(quantitativeColumns)
+
+# Initialize 10x10 matrices to store distances and similarities
+l1Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
+l1Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+l2Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
+l2Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+l3Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
+l3Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+l10Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
+l10Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+# Calculate L1 distances and L1 norm-based similarities
+for (i in 1:num_columns) {
+  for (j in 1:num_columns) {
+    if (i != j) {
+      # Calculate L1 Distance and Similarity
+      l1Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 1)
+      l1Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 1)
+      
+      # Calculate L2 Distance and Similarity
+      l2Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 2)
+      l2Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 2)
+      
+      #Calculate L3 Distance and Similarity
+      l3Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 3)
+      l3Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 3)
+      
+      # Calculate L10 Distance and Similarity
+      l10Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
+      l10Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
+      
+      l1Distances[i, j] <- format(l1Dist, scientific = FALSE)
+      l1Similarities[i, j] <- format(l1Sim, scientific = FALSE)
+      
+      l2Distances[i, j] <- format(l2Dist, scientific = FALSE)
+      l2Similarities[i, j] <- format(l2Sim, scientific = FALSE)
+      
+      l3Distances[i, j] <- format(l3Dist, scientific = FALSE)
+      l3Similarities[i, j] <- format(l3Sim, scientific = FALSE)
+      
+      l10Distances[i, j] <- format(l10Dist, scientific = FALSE)
+      l10Similarities[i, j] <- format(l10Sim, scientific = FALSE)
+    }
+  }
+}
