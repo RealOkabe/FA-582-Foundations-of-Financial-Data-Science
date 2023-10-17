@@ -82,6 +82,8 @@ calculateLpSimilarity <- function(x, y, p) {
   return (1 / (1 + calculateLpNorm(x, y, p)))
 }
 
+calculateMinkovskiDistance <- function(x, y)
+
 num_columns <- length(quantitativeColumns)
 
 # Initialize 10x10 matrices to store distances and similarities
@@ -96,6 +98,8 @@ l3Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
 
 l10Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
 l10Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+minkowskiDistances <- matrix(0, nrow = num_columns, ncol = num_columns)
 
 # Calculate L1 distances and L1 norm-based similarities
 for (i in 1:num_columns) {
@@ -117,17 +121,46 @@ for (i in 1:num_columns) {
       l10Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
       l10Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
       
-      l1Distances[i, j] <- format(l1Dist, scientific = FALSE)
-      l1Similarities[i, j] <- format(l1Sim, scientific = FALSE)
+      l1Distances[i, j] <- as.numeric(l1Dist)
+      l1Similarities[i, j] <- as.numeric(l1Sim)
       
-      l2Distances[i, j] <- format(l2Dist, scientific = FALSE)
-      l2Similarities[i, j] <- format(l2Sim, scientific = FALSE)
+      l2Distances[i, j] <- as.numeric(l2Dist)
+      l2Similarities[i, j] <- as.numeric(l2Sim)
       
-      l3Distances[i, j] <- format(l3Dist, scientific = FALSE)
-      l3Similarities[i, j] <- format(l3Sim, scientific = FALSE)
+      l3Distances[i, j] <- as.numeric(l3Dist)
+      l3Similarities[i, j] <- as.numeric(l3Sim)
       
-      l10Distances[i, j] <- format(l10Dist, scientific = FALSE)
-      l10Similarities[i, j] <- format(l10Sim, scientific = FALSE)
+      l10Distances[i, j] <- as.numeric(l10Dist)
+      l10Similarities[i, j] <- as.numeric(l10Sim)
     }
   }
 }
+
+calculateNormalizedWeights <- function(lpDistancesMatrix) {
+  # Calculate the inverse of the L2 distances matrix
+  invLpDistancesMatrix <- solve(lpDistancesMatrix)
+  
+  # Sum each row of the inverse matrix
+  rowSumsInvMatrix <- rowSums(invLpDistancesMatrix)
+  
+  # Normalize the sums to obtain the normalized weights
+  normalizedWeights <- rowSumsInvMatrix / sum(rowSumsInvMatrix)
+  
+  return(normalizedWeights)
+}
+
+print(l2Distances)
+
+# Calculate normalized weights for Minkowski distances
+normalizedWeights <- calculateNormalizedWeights(l2Distances)
+
+# Calculate Minkowski distances
+for (i in 1:num_columns) {
+  for (j in 1:num_columns) {
+    if (i != j) {
+      minkowskiDistances[i, j] <- sum(normalizedWeights * (l2Distances[i, ]^2))^(1/2)
+    }
+  }
+}
+
+
