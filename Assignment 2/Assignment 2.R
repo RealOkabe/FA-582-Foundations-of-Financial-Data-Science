@@ -123,6 +123,8 @@ overlapMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
 
 ifsMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
 
+goodallMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+
 # Calculate L1 distances and L1 norm-based similarities
 for (i in 1:numColumns) {
   for (j in 1:numColumns) {
@@ -162,6 +164,13 @@ for (i in 1:numColumns) {
       commonValues <- intersect(quantitativeData[, i], quantitativeData[, j])
       uniqueValuesCount <- length(unique(quantitativeData[, i]))
       ifsMeasures[i, j] <- length(commonValues) / uniqueValuesCount
+      
+      # Calculate Goodall similarity
+      commonValues <- intersect(quantitativeData[, i], quantitativeData[, j])
+      goodallMeasures[i, j] <- length(commonValues)
+    }
+    else {
+      goodallMeasures[i, j] <- 1
     }
   }
 }
@@ -197,3 +206,7 @@ scaledQuantitativeData <- scale(quantitativeData)
 
 # Calculate the mahalanobis distances
 mahalanobisDistances <- mahalanobis(scaledQuantitativeData, colMeans(scaledQuantitativeData), cov(scaledQuantitativeData))
+
+# Normalize the goodallMeasures matrix by dividing by max value
+maxGoodall <- max(goodallMeasures)
+goodallMeasures <- goodallMeasures / maxGoodall
