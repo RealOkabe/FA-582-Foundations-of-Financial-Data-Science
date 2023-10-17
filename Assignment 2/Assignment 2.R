@@ -82,8 +82,6 @@ calculateLpSimilarity <- function(x, y, p) {
   return (1 / (1 + calculateLpNorm(x, y, p)))
 }
 
-calculateMinkovskiDistance <- function(x, y)
-
 num_columns <- length(quantitativeColumns)
 
 # Initialize 10x10 matrices to store distances and similarities
@@ -149,8 +147,6 @@ calculateNormalizedWeights <- function(lpDistancesMatrix) {
   return(normalizedWeights)
 }
 
-print(l2Distances)
-
 # Calculate normalized weights for Minkowski distances
 normalizedWeights <- calculateNormalizedWeights(l2Distances)
 
@@ -162,5 +158,3 @@ for (i in 1:num_columns) {
     }
   }
 }
-
-
