@@ -1,5 +1,6 @@
 library(dplyr)
 library(rvest)
+library(cov)
 
 wikiUrl <- "https://en.wikipedia.org/wiki/List_ofS%26P_500_companies"
 
@@ -98,6 +99,7 @@ calculateMatchSimilarity <- function(x, y) {
   return(similarity)
 }
 
+# Number of columns
 numColumns <- length(quantitativeColumns)
 
 # Initialize 10x10 matrices to store distances and similarities
@@ -178,4 +180,9 @@ for (i in 1:numColumns) {
     }
   }
 }
+
+scaledQuantitativeData <- scale(quantitativeData)
+
+# Calculate the mahalanobis distances
+mahalanobisDistances <- mahalanobis(scaledQuantitativeData, colMeans(scaledQuantitativeData), cov(scaledQuantitativeData))
 
