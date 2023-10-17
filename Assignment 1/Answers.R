@@ -1,3 +1,6 @@
+# install statements in case libraries are not present
+install.packages("dplyr", "ggplot2", "gridExtra", "readxl")
+
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
@@ -10,15 +13,10 @@ manhattan_data = read_excel("rollingsales_manhattan.xlsx", skip = 4)
 statenisland_data = read_excel("rollingsales_statenisland.xlsx", skip = 4)
 queens_data = read_excel("rollingsales_queens.xlsx", skip = 4)
 
-summary(brooklyn_data)
-
-
+# We only want houses, no commercial buildings
 housesOfInterest = function(x) {
   return(grepl("one family|two family|three family|coop|condo", tolower(x$`BUILDING CLASS CATEGORY`)))
 }
-
-brooklyn_data <- brooklyn_data[ housesOfInterest(brooklyn_data), ]
-print(brooklyn_data$`BUILDING CLASS CATEGORY`)
 
 # Cleaning data
 # Just to be safe, removing data about houses with 0 residential units and no houses have price < $100k
@@ -62,8 +60,7 @@ all_data <- rbind(
   data.frame(SALE_YEAR = queens_data$`SALE YEAR`, SALE_PRICE = queens_data$`SALE PRICE`, BOROUGH = "Queens")
 )
 
-options(repr.plot.width = 10, repr.plot.height = 6)
-
+# Plotting price changes over the years
 ggplot(all_data, aes(x = SALE_YEAR, y = SALE_PRICE, color = BOROUGH)) +
   geom_boxplot() +
   labs(title = "SALE PRICE Across Boroughs Over SALE YEAR",
@@ -71,13 +68,14 @@ ggplot(all_data, aes(x = SALE_YEAR, y = SALE_PRICE, color = BOROUGH)) +
        y = "SALE PRICE") +
   theme_minimal() +
   scale_y_continuous(labels = scales::comma)
+
+
 # Problem 2
 # Read data for 3 days and store into variables
 nyt1 <- read.csv("nyt1.csv")
 nyt2 <- read.csv("nyt2.csv")
 nyt3 <- read.csv("nyt3.csv")
-# Remove columns in which Age is 0. Just cleaning the data
-nyt1 <- nyt1[ nyt1$Age != 0, ]
+
 # Function for creating the AgeGroup column
 addAgeGroup <- function(x) {
   x %>% mutate(AgeGroup = case_when(
@@ -90,6 +88,8 @@ addAgeGroup <- function(x) {
     Age >=70 ~ "70+"
   ))
 }
+# Remove columns in which Age is 0. Just cleaning the data
+nyt1 <- nyt1[ nyt1$Age != 0, ]
 nyt1 <- addAgeGroup(nyt1)
 nyt2 <- nyt2[ nyt2$Age != 0, ]
 nyt2 <- addAgeGroup(nyt2)
