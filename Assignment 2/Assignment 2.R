@@ -121,6 +121,8 @@ matchSimilarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
 overlapMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
 
+ifsMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+
 # Calculate L1 distances and L1 norm-based similarities
 for (i in 1:numColumns) {
   for (j in 1:numColumns) {
@@ -156,6 +158,10 @@ for (i in 1:numColumns) {
       matchSimilarities[i, j] <- calculateMatchSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]])
       
       overlapMeasures[i, j] <- as.numeric(all(quantitativeData[, i] == quantitativeData[, j]))
+      
+      commonValues <- intersect(quantitativeData[, i], quantitativeData[, j])
+      uniqueValuesCount <- length(unique(quantitativeData[, i]))
+      ifsMeasures[i, j] <- length(commonValues) / uniqueValuesCount
     }
   }
 }
