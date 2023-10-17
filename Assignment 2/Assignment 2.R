@@ -1,6 +1,6 @@
 library(dplyr)
 library(rvest)
-library(cov)
+library(proxy)
 
 wikiUrl <- "https://en.wikipedia.org/wiki/List_ofS%26P_500_companies"
 
@@ -119,6 +119,8 @@ minkowskiDistances <- matrix(0, nrow = numColumns, ncol = numColumns)
 
 matchSimilarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
+overlapMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+
 # Calculate L1 distances and L1 norm-based similarities
 for (i in 1:numColumns) {
   for (j in 1:numColumns) {
@@ -152,9 +154,13 @@ for (i in 1:numColumns) {
       l10Similarities[i, j] <- as.numeric(l10Sim)
       
       matchSimilarities[i, j] <- calculateMatchSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]])
+      
+      overlapMeasures[i, j] <- as.numeric(all(quantitativeData[, i] == quantitativeData[, j]))
     }
   }
 }
+
+diag(overlapMeasures) <- 1
 
 calculateNormalizedWeights <- function(lpDistancesMatrix) {
   # Calculate the inverse of the L2 distances matrix
@@ -185,4 +191,3 @@ scaledQuantitativeData <- scale(quantitativeData)
 
 # Calculate the mahalanobis distances
 mahalanobisDistances <- mahalanobis(scaledQuantitativeData, colMeans(scaledQuantitativeData), cov(scaledQuantitativeData))
-
