@@ -82,26 +82,44 @@ calculateLpSimilarity <- function(x, y, p) {
   return (1 / (1 + calculateLpNorm(x, y, p)))
 }
 
-num_columns <- length(quantitativeColumns)
+# Function to calculate Match based similarity
+calculateMatchSimilarity <- function(x, y) {
+  # Convert x and y to numeric if they are not already
+  x <- as.numeric(x)
+  y <- as.numeric(y)
+  
+  # Create equi-width buckets for x and y
+  xBuckets <- cut(x, breaks = 3, labels = FALSE)
+  yBuckets <- cut(y, breaks = 3, labels = FALSE)
+  
+  # Calculate similarity based on matching buckets
+  similarity <- sum(xBuckets == yBuckets) / 3
+  
+  return(similarity)
+}
+
+numColumns <- length(quantitativeColumns)
 
 # Initialize 10x10 matrices to store distances and similarities
-l1Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
-l1Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+l1Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
+l1Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
-l2Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
-l2Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+l2Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
+l2Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
-l3Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
-l3Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+l3Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
+l3Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
-l10Distances <- matrix(0, nrow = num_columns, ncol = num_columns)
-l10Similarities <- matrix(0, nrow = num_columns, ncol = num_columns)
+l10Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
+l10Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
-minkowskiDistances <- matrix(0, nrow = num_columns, ncol = num_columns)
+minkowskiDistances <- matrix(0, nrow = numColumns, ncol = numColumns)
+
+matchSimilarities <- matrix(0, nrow = numColumns, ncol = numColumns)
 
 # Calculate L1 distances and L1 norm-based similarities
-for (i in 1:num_columns) {
-  for (j in 1:num_columns) {
+for (i in 1:numColumns) {
+  for (j in 1:numColumns) {
     if (i != j) {
       # Calculate L1 Distance and Similarity
       l1Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 1)
@@ -130,6 +148,8 @@ for (i in 1:num_columns) {
       
       l10Distances[i, j] <- as.numeric(l10Dist)
       l10Similarities[i, j] <- as.numeric(l10Sim)
+      
+      matchSimilarities[i, j] <- calculateMatchSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]])
     }
   }
 }
@@ -151,10 +171,11 @@ calculateNormalizedWeights <- function(lpDistancesMatrix) {
 normalizedWeights <- calculateNormalizedWeights(l2Distances)
 
 # Calculate Minkowski distances
-for (i in 1:num_columns) {
-  for (j in 1:num_columns) {
+for (i in 1:numColumns) {
+  for (j in 1:numColumns) {
     if (i != j) {
       minkowskiDistances[i, j] <- sum(normalizedWeights * (l2Distances[i, ]^2))^(1/2)
     }
   }
 }
+
