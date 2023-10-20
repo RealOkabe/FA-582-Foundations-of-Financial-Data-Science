@@ -210,3 +210,24 @@ mahalanobisDistances <- mahalanobis(scaledQuantitativeData, colMeans(scaledQuant
 # Normalize the goodallMeasures matrix by dividing by max value
 maxGoodall <- max(goodallMeasures)
 goodallMeasures <- goodallMeasures / maxGoodall
+
+# Function to get top and bottom 10 values
+bottom10Values <- function(m, selectedDfColnames) {
+  # Create a mask to exclude diagonal elements
+  mask <- upper.tri(m, diag = TRUE)
+  
+  # Set diagonal elements to NA
+  m[!mask] <- NA
+  
+  bottom <- order(m, decreasing = FALSE, na.last = FALSE)[1:10]
+  bottom10Pairs <- expand.grid(row = 1:11, col = 1:11)[bottom, ]
+  
+  for (ind in 1:nrow(bottom10Pairs)) {
+    
+    pair <- bottom10Pairs[ind, ]
+    i <- pair[1]
+    j <- pair[2]
+    
+    cat("Pair ", ind, " (", selectedDfColnames[as.numeric(i)], ",", selectedDfColnames[as.numeric(j)], ") \n")
+  } 
+}
