@@ -53,8 +53,22 @@ securitiesData <- read.csv("securities.csv")
 # Select 100 random rows from securitiesData
 securitiesData <- securitiesData[sample(nrow(securitiesData), 100), ]
 
+# Rename Ticker.symbol to Ticker.Symbol for consistency
+securitiesData <- securitiesData %>%
+  rename(Ticker.Symbol = Ticker.symbol)
+
 # Filtering fundamentalsData to include Tickers that are present in securitiesData
-fundamentalsData <- fundamentalsData[ fundamentalsData$Ticker.Symbol %in% securitiesData$Ticker.symbol, ]
+fundamentalsData <- fundamentalsData[ fundamentalsData$Ticker.Symbol %in% securitiesData$Ticker.Symbol, ]
+
+# Merge fundamentalsData and securitiesData for categorical columns
+mergedData <- fundamentalsData %>%
+  left_join(securitiesData, by = "Ticker.Symbol")
+
+# Select the relevant columns (GICS.Sector and GICS.Sub.Industry) from the merged data
+selectedData <- mergedData[, c("Ticker.Symbol", "GICS.Sector", "GICS.Sub.Industry")]
+
+# Add selectedData to fundamentalsData
+fundamentalsData <- cbind(fundamentalsData, selectedData)
 
 # Changing Period.Ending from character to Date
 fundamentalsData$Period.Ending <- as.Date(fundamentalsData$Period.Ending, format = "%Y-%m-%d")
@@ -68,6 +82,8 @@ quantitativeColumns <- c(
   "Current.Ratio", "Gross.Margin", "Gross.Profit", 
   "Operating.Income", "Pre.Tax.ROE", "Profit.Margin", "Total.Revenue"
 )
+
+categoricalColumns <- c("GICS.Sector", "GICS.Sub.Industry")
 
 quantitativeData <- fundamentalsData[, quantitativeColumns]
 quantitativeData <- na.omit(quantitativeData)
@@ -272,3 +288,4 @@ for (i in 1:10) {
   cat(paste("Pair:", bottomColumnPairs[i], "- Value:", bottomValues[i], "\n"))
 }
 
+categoricalData <- fundamentalsData[, categoricalColumns ]
