@@ -2,7 +2,7 @@ library(dplyr)
 library(rvest)
 library(proxy)
 
-wikiUrl <- "https://en.wikipedia.org/wiki/List_ofS%26P_500_companies"
+wikiUrl <- "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 
 htmlCode <- read_html(wikiUrl)
 
@@ -212,22 +212,63 @@ maxGoodall <- max(goodallMeasures)
 goodallMeasures <- goodallMeasures / maxGoodall
 
 # Function to get top and bottom 10 values
-bottom10Values <- function(m, selectedDfColnames) {
-  # Create a mask to exclude diagonal elements
-  mask <- upper.tri(m, diag = TRUE)
+findTopAndBottomPairs <- function(matrix, columnNames) {
+  topValues <- numeric()
+  topColumnPairs <- character()
+  bottomValues <- numeric()
+  bottomColumnPairs <- character()
   
-  # Set diagonal elements to NA
-  m[!mask] <- NA
+  for (i in 1:(ncol(matrix) - 1)) {
+    for (j in (i + 1):ncol(matrix)) {
+      value <- matrix[i, j]
+      columnPair <- paste(columnNames[i], columnNames[j], sep = " - ")
+      
+      if (length(topValues) < 10 || value > min(topValues)) {
+        if (length(topValues) >= 10) {
+          minIndex <- which.min(topValues)
+          topValues <- topValues[-minIndex]
+          topColumnPairs <- topColumnPairs[-minIndex]
+        }
+        topValues <- c(topValues, value)
+        topColumnPairs <- c(topColumnPairs, columnPair)
+      }
+      
+      if (length(bottomValues) < 10 || value < max(bottomValues)) {
+        if (length(bottomValues) >= 10) {
+          maxIndex <- which.max(bottomValues)
+          bottomValues <- bottomValues[-maxIndex]
+          bottomColumnPairs <- bottomColumnPairs[-maxIndex]
+        }
+        bottomValues <- c(bottomValues, value)
+        bottomColumnPairs <- c(bottomColumnPairs, columnPair)
+      }
+    }
+  }
   
-  bottom <- order(m, decreasing = FALSE, na.last = FALSE)[1:10]
-  bottom10Pairs <- expand.grid(row = 1:11, col = 1:11)[bottom, ]
+  result <- list(
+    topValues = topValues,
+    topColumnPairs = topColumnPairs,
+    bottomValues = bottomValues,
+    bottomColumnPairs = bottomColumnPairs
+  )
   
-  for (ind in 1:nrow(bottom10Pairs)) {
-    
-    pair <- bottom10Pairs[ind, ]
-    i <- pair[1]
-    j <- pair[2]
-    
-    cat("Pair ", ind, " (", selectedDfColnames[as.numeric(i)], ",", selectedDfColnames[as.numeric(j)], ") \n")
-  } 
+  return(result)
 }
+
+topAndBottom <- findTopAndBottomPairs(l1Similarities, quantitativeColumns)
+
+topValues <- topAndBottom$topValues
+topColumnPairs <- topAndBottom$topColumnPairs
+bottomValues <- topAndBottom$bottomValues
+bottomColumnPairs <- topAndBottom$bottomColumnPairs
+
+cat("Top 10 Greatest L1 Similarities:\n")
+for (i in 1:10) {
+  cat(paste("Pair:", topColumnPairs[i], "- Value:", topValues[i], "\n"))
+}
+
+cat("\nBottom 10 Smallest L1 Similarities:\n")
+for (i in 1:10) {
+  cat(paste("Pair:", bottomColumnPairs[i], "- Value:", bottomValues[i], "\n"))
+}
+
