@@ -24,7 +24,7 @@ companiesTable <- companiesTable[!grepl(";", companiesTable$`Headquarters State`
 
 # Use table to count the number of companies in each state
 stateCounts <- table(companiesTable$`Headquarters State`)
-print(stateCounts)
+
 # Plot the number of companies across states
 barplot(stateCounts, main = "Number of Companies by State", xlab = "State", ylab = "Number of Companies", col = "skyblue", las = 2, cex.names = 0.7)
 
@@ -134,7 +134,7 @@ l3Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 l10Distances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 l10Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-minkowskiDistances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+minkovskiDistances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
 mahalanobisDistances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
@@ -214,14 +214,14 @@ calculateNormalizedWeights <- function(lpDistancesMatrix) {
   return(normalizedWeights)
 }
 
-# Calculate normalized weights for Minkowski distances
+# Calculate normalized weights for minkovski distances
 normalizedWeights <- calculateNormalizedWeights(l2Distances)
 
-# Calculate Minkowski distances
+# Calculate minkovski distances
 for (i in 1:numberOfRows) {
   for (j in 1:numberOfRows) {
     if (i != j) {
-      minkowskiDistances[i, j] <- sum(normalizedWeights * (l2Distances[i, ]^2))^(1/2)
+      minkovskiDistances[i, j] <- sum(normalizedWeights * (l2Distances[i, ]^2))^(1/2)
     }
   }
 }
@@ -239,10 +239,6 @@ for (i in 1:numberOfRows) {
     overallSimilarities[i, j] <- 0.5 * l1Similarities[i, j] + (1 - 0.5) * categoricalSimilarities[i, j]
   }
 }
-
-# Normalize quantitativeData for a more unbiased similarity between that and categoricalData
-scaledData <- scale(quantitativeData)
-quantitativeData[, sapply(quantitativeData, is.numeric)] <- scaledData
 
 overallNormalizedSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
@@ -270,27 +266,59 @@ getTopAndBottomValuesIndices <- function(matrix) {
   # Combine the indices and values
   data <- data.frame(index1 = indexMatrix$row, index2 = indexMatrix$col, value = values)
   
+  # Filter out diagonal values (where index1 == index2)
+  data <- data[data$index1 != data$index2, ]
+  
   # Get the top 10 pairs with values
-  top10 <- data[order(data$value, decreasing = FALSE)[1:10], ]
+  top10 <- data[order(data$value, decreasing = TRUE)[1:10], ]
   
   # Get the bottom 10 pairs with values
-  bottom10 <- data[order(data$value, decreasing = TRUE)[1:10], ]
+  bottom10 <- data[order(data$value, decreasing = FALSE)[1:10], ]
   
   return(list(top10, bottom10))
 }
 
 
 
+
 # Function to print the top and bottom 10 pairs and values
 printTopAndBottomValues <- function(top10Values, bottom10Values, dataframe) {
-  print("Printing the top 10 values")
+  cat("Top Pairs:\n")
+  cat("--------------\t--------------\t-----\n")
+  cat("Ticker1.Symbol\tTicker2.Symbol\tValue\n")
+  cat("--------------\t--------------\t-----\n")
   for (i in 1:nrow(top10Values)) {
-    # print(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, " ", dataframe[(top10Values[i, ]$index2), ]$Ticker.Symbol)
-    cat("The pair of Tickers", dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, dataframe[top10Values[i, ]$index2, ]$Ticker.Symbol, "has value", top10Values[i, ]$value, "\n")
+    cat("   ", format(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", format(dataframe[top10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), top10Values[i, ]$value, "\n")
   }
-  print("Printing the bottom 10 values")
+  cat("Bottom Pairs:\n")
+  cat("--------------\t--------------\t-----\n")
+  cat("Ticker1.Symbol\tTicker2.Symbol\tValue\n")
+  cat("--------------\t--------------\t-----\n")
   for (i in 1:nrow(bottom10Values)) {
-    # print(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, " ", dataframe[(top10Values[i, ]$index2), ]$Ticker.Symbol)
-    cat("The pair of Tickers", dataframe[(bottom10Values[i, ]$index1), ]$Ticker.Symbol, dataframe[bottom10Values[i, ]$index2, ]$Ticker.Symbol, "has value", bottom10Values[i, ]$value, "\n")
+    cat("   ", format(dataframe[(bottom10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", format(dataframe[bottom10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), bottom10Values[i, ]$value, "\n")
   }
+}
+
+# Now getting top and bottom 10 values for everything and printing it
+resultsArray <- vector("list", length = 16)
+
+resultsArray[[1]] <- getTopAndBottomValuesIndices(l1Distances)
+resultsArray[[2]] <- getTopAndBottomValuesIndices(l1Similarities)
+resultsArray[[3]] <- getTopAndBottomValuesIndices(l2Distances)
+resultsArray[[4]] <- getTopAndBottomValuesIndices(l2Similarities)
+resultsArray[[5]] <- getTopAndBottomValuesIndices(l3Distances)
+resultsArray[[6]] <- getTopAndBottomValuesIndices(l3Similarities)
+resultsArray[[7]] <- getTopAndBottomValuesIndices(l10Distances)
+resultsArray[[8]] <- getTopAndBottomValuesIndices(l10Similarities)
+resultsArray[[9]] <- getTopAndBottomValuesIndices(minkovskiDistances)
+resultsArray[[10]] <- getTopAndBottomValuesIndices(matchSimilarities)
+resultsArray[[11]] <- getTopAndBottomValuesIndices(mahalanobisDistances)
+resultsArray[[12]] <- getTopAndBottomValuesIndices(overlapMeasures)
+resultsArray[[13]] <- getTopAndBottomValuesIndices(ifsMeasures)
+resultsArray[[14]] <- getTopAndBottomValuesIndices(goodallMeasures)
+resultsArray[[15]] <- getTopAndBottomValuesIndices(overallSimilarities)
+resultsArray[[16]] <- getTopAndBottomValuesIndices(overallNormalizedSimilarities)
+
+for (i in 1:length(resultsArray)) {
+  printTopAndBottomValues(resultsArray[[i]][[1]], resultsArray[[i]][[2]], fundamentalsData)
 }
