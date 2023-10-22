@@ -255,3 +255,42 @@ for (i in 1:numberOfRows) {
     overallNormalizedSimilarities[i, j] <- 0.5 * normalizedL1Similarities[i, j] * (1 - 0.5) * categoricalSimilarities[i, j]
   }
 }
+
+# Function to find the top and bottom pairs with values and corresponding Ticker.Symbol pairs
+getTopAndBottomValuesIndices <- function(matrix) {
+  numElements <- nrow(matrix)
+  
+  # Create an index matrix to track the indices of the elements
+  indexMatrix <- expand.grid(row = 1:numElements, col = 1:numElements)
+  indexMatrix <- indexMatrix[indexMatrix$row != indexMatrix$col, ]
+  
+  # Get the values corresponding to the indices
+  values <- matrix[indexMatrix$row + (indexMatrix$col - 1) * numElements]
+  
+  # Combine the indices and values
+  data <- data.frame(index1 = indexMatrix$row, index2 = indexMatrix$col, value = values)
+  
+  # Get the top 10 pairs with values
+  top10 <- data[order(data$value, decreasing = FALSE)[1:10], ]
+  
+  # Get the bottom 10 pairs with values
+  bottom10 <- data[order(data$value, decreasing = TRUE)[1:10], ]
+  
+  return(list(top10, bottom10))
+}
+
+
+
+# Function to print the top and bottom 10 pairs and values
+printTopAndBottomValues <- function(top10Values, bottom10Values, dataframe) {
+  print("Printing the top 10 values")
+  for (i in 1:nrow(top10Values)) {
+    # print(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, " ", dataframe[(top10Values[i, ]$index2), ]$Ticker.Symbol)
+    cat("The pair of Tickers", dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, dataframe[top10Values[i, ]$index2, ]$Ticker.Symbol, "has value", top10Values[i, ]$value, "\n")
+  }
+  print("Printing the bottom 10 values")
+  for (i in 1:nrow(bottom10Values)) {
+    # print(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, " ", dataframe[(top10Values[i, ]$index2), ]$Ticker.Symbol)
+    cat("The pair of Tickers", dataframe[(bottom10Values[i, ]$index1), ]$Ticker.Symbol, dataframe[bottom10Values[i, ]$index2, ]$Ticker.Symbol, "has value", bottom10Values[i, ]$value, "\n")
+  }
+}
