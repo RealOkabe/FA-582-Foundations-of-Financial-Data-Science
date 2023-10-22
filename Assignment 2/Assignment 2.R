@@ -73,8 +73,8 @@ fundamentalsData <- cbind(fundamentalsData, selectedData)
 # Changing Period.Ending from character to Date
 fundamentalsData$Period.Ending <- as.Date(fundamentalsData$Period.Ending, format = "%Y-%m-%d")
 
-# Filtering fundamentalsData to include data from year 2015
-fundamentalsData <- subset(fundamentalsData, format(fundamentalsData$Period.Ending, "%Y") == 2015)
+# Filtering fundamentalsData to include data from year 2012
+fundamentalsData <- subset(fundamentalsData, format(fundamentalsData$Period.Ending, "%Y") == 2012)
 
 # Select 10 Quantitative columns
 quantitativeColumns <- c(
@@ -88,19 +88,23 @@ categoricalColumns <- c("GICS.Sector", "GICS.Sub.Industry")
 quantitativeData <- fundamentalsData[, quantitativeColumns]
 quantitativeData <- na.omit(quantitativeData)
 
+normalizedQuantitativeData <- scale(quantitativeData)
 
-# Function to calculate Lp Norm
-calculateLpNorm <- function(x, y, p) {
-  return (sum(abs(x - y) ^ p) ^ (1 / p))
+categoricalData <- fundamentalsData[, categoricalColumns ]
+categoricalData <- na.omit(categoricalData)
+
+# Function to calculate Lp Norm across rows
+calculateLpNormRow <- function(x, y, p) {
+  return (sum(abs(x - y) ^ p, na.rm = TRUE) ^ (1 / p))
 }
 
-# Function to calculate Lp Similarity
-calculateLpSimilarity <- function(x, y, p) {
-  return (1 / (1 + calculateLpNorm(x, y, p)))
+# Function to calculate Lp Similarity across rows
+calculateLpSimilarityRow <- function(x, y, p) {
+  return (1 / (1 + calculateLpNormRow(x, y, p)))
 }
 
-# Function to calculate Match based similarity
-calculateMatchSimilarity <- function(x, y) {
+# Function to calculate Match based similarity across rows
+calculateMatchSimilarityRow <- function(x, y) {
   # Convert x and y to numeric if they are not already
   x <- as.numeric(x)
   y <- as.numeric(y)
@@ -115,83 +119,87 @@ calculateMatchSimilarity <- function(x, y) {
   return(similarity)
 }
 
-# Number of columns
-numColumns <- length(quantitativeColumns)
+numberOfRows <- nrow(quantitativeData)
 
-# Initialize 10x10 matrices to store distances and similarities
-l1Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
-l1Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
+# Initialize matrices to store distances and similarities
+l1Distances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+l1Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-l2Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
-l2Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
+l2Distances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+l2Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-l3Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
-l3Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
+l3Distances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+l3Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-l10Distances <- matrix(0, nrow = numColumns, ncol = numColumns)
-l10Similarities <- matrix(0, nrow = numColumns, ncol = numColumns)
+l10Distances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+l10Similarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-minkowskiDistances <- matrix(0, nrow = numColumns, ncol = numColumns)
+minkowskiDistances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-matchSimilarities <- matrix(0, nrow = numColumns, ncol = numColumns)
+mahalanobisDistances <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-overlapMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+matchSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-ifsMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+overlapMeasures <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-goodallMeasures <- matrix(0, nrow = numColumns, ncol = numColumns)
+ifsMeasures <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-# Calculate L1 distances and L1 norm-based similarities
-for (i in 1:numColumns) {
-  for (j in 1:numColumns) {
+goodallMeasures <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+
+categoricalSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+
+quantitativeData <- sapply(quantitativeData, as.numeric)
+
+# Calculate distances and similarities across rows
+for (i in 1:numberOfRows) {
+  for (j in 1:numberOfRows) {
     if (i != j) {
-      # Calculate L1 Distance and Similarity
-      l1Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 1)
-      l1Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 1)
+      # Calculate Lp Distances and Similarities directly within the assignment
+      l1Distances[i, j] <- as.numeric(calculateLpNormRow(quantitativeData[i, ], quantitativeData[j, ], 1))
+      l1Similarities[i, j] <- as.numeric(calculateLpSimilarityRow(quantitativeData[i, ], quantitativeData[j, ], 1))
       
-      # Calculate L2 Distance and Similarity
-      l2Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 2)
-      l2Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 2)
+      l2Distances[i, j] <- as.numeric(calculateLpNormRow(quantitativeData[i, ], quantitativeData[j, ], 2))
+      l2Similarities[i, j] <- as.numeric(calculateLpSimilarityRow(quantitativeData[i, ], quantitativeData[j, ], 2))
       
-      #Calculate L3 Distance and Similarity
-      l3Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 3)
-      l3Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 3)
+      l3Distances[i, j] <- as.numeric(calculateLpNormRow(quantitativeData[i, ], quantitativeData[j, ], 3))
+      l3Similarities[i, j] <- as.numeric(calculateLpSimilarityRow(quantitativeData[i, ], quantitativeData[j, ], 3))
+        
+      l10Distances[i, j] <- as.numeric(calculateLpNormRow(quantitativeData[i, ], quantitativeData[j, ], 10))
+      l10Similarities[i, j] <- as.numeric(calculateLpSimilarityRow(quantitativeData[i, ], quantitativeData[j, ], 10))
       
-      # Calculate L10 Distance and Similarity
-      l10Dist <- calculateLpNorm(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
-      l10Sim <- calculateLpSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]], 10)
+      # Calculate the Mahalanobis distance between row i and row j using normalized data because it was not possible using regular data
+      mahalanobisDistances[i, j] <- mahalanobis(normalizedQuantitativeData[i, , drop = FALSE], normalizedQuantitativeData[j, , drop = FALSE], cov(normalizedQuantitativeData))
       
-      l1Distances[i, j] <- as.numeric(l1Dist)
-      l1Similarities[i, j] <- as.numeric(l1Sim)
+      # Calculate Match Similarity directly within the assignment
+      matchSimilarities[i, j] <- calculateMatchSimilarityRow(quantitativeData[i, ], quantitativeData[j, ])
       
-      l2Distances[i, j] <- as.numeric(l2Dist)
-      l2Similarities[i, j] <- as.numeric(l2Sim)
+      overlapMeasures[i, j] <- as.numeric(all(quantitativeData[i, ] == quantitativeData[j, ]))
       
-      l3Distances[i, j] <- as.numeric(l3Dist)
-      l3Similarities[i, j] <- as.numeric(l3Sim)
-      
-      l10Distances[i, j] <- as.numeric(l10Dist)
-      l10Similarities[i, j] <- as.numeric(l10Sim)
-      
-      matchSimilarities[i, j] <- calculateMatchSimilarity(quantitativeData[, quantitativeColumns[i]], quantitativeData[, quantitativeColumns[j]])
-      
-      overlapMeasures[i, j] <- as.numeric(all(quantitativeData[, i] == quantitativeData[, j]))
-      
-      commonValues <- intersect(quantitativeData[, i], quantitativeData[, j])
-      uniqueValuesCount <- length(unique(quantitativeData[, i]))
+      commonValues <- intersect(quantitativeData[i, ], quantitativeData[j, ])
+      uniqueValuesCount <- length(unique(quantitativeData[i, ]))
       ifsMeasures[i, j] <- length(commonValues) / uniqueValuesCount
       
-      # Calculate Goodall similarity
-      commonValues <- intersect(quantitativeData[, i], quantitativeData[, j])
+      # Calculate Goodall similarity directly within the assignment
+      commonValues <- intersect(quantitativeData[i, ], quantitativeData[j, ])
       goodallMeasures[i, j] <- length(commonValues)
-    }
-    else {
+      
+      # Calculate categorical data similarity
+      if (categoricalData[i, ]$GICS.Sector == categoricalData[j, ]$GICS.Sector & 
+          categoricalData[i, ]$GICS.Sub.Industry == categoricalData[j, ]$GICS.Sub.Industry) {
+        categoricalSimilarities[i, j] = 2
+      } else if (categoricalData[i, ]$GICS.Sector != categoricalData[j, ]$GICS.Sector & 
+                 categoricalData[i, ]$GICS.Sub.Industry != categoricalData[j, ]$GICS.Sub.Industry) {
+        categoricalSimilarities[i, j] = 0
+      } else {
+        categoricalSimilarities[i, j] = 1
+      }
+    } else {
       goodallMeasures[i, j] <- 1
+      overlapMeasures[i, j] <- 1
+      categoricalSimilarities[i, j] <- 2
     }
   }
 }
-
-diag(overlapMeasures) <- 1
 
 calculateNormalizedWeights <- function(lpDistancesMatrix) {
   # Calculate the inverse of the L2 distances matrix
@@ -210,82 +218,40 @@ calculateNormalizedWeights <- function(lpDistancesMatrix) {
 normalizedWeights <- calculateNormalizedWeights(l2Distances)
 
 # Calculate Minkowski distances
-for (i in 1:numColumns) {
-  for (j in 1:numColumns) {
+for (i in 1:numberOfRows) {
+  for (j in 1:numberOfRows) {
     if (i != j) {
       minkowskiDistances[i, j] <- sum(normalizedWeights * (l2Distances[i, ]^2))^(1/2)
     }
   }
 }
 
-scaledQuantitativeData <- scale(quantitativeData)
-
-# Calculate the mahalanobis distances
-mahalanobisDistances <- mahalanobis(scaledQuantitativeData, colMeans(scaledQuantitativeData), cov(scaledQuantitativeData))
-
 # Normalize the goodallMeasures matrix by dividing by max value
 maxGoodall <- max(goodallMeasures)
 goodallMeasures <- goodallMeasures / maxGoodall
 
-# Function to get top and bottom 10 values
-findTopAndBottomPairs <- function(matrix, columnNames) {
-  topValues <- numeric()
-  topColumnPairs <- character()
-  bottomValues <- numeric()
-  bottomColumnPairs <- character()
-  
-  for (i in 1:(ncol(matrix) - 1)) {
-    for (j in (i + 1):ncol(matrix)) {
-      value <- matrix[i, j]
-      columnPair <- paste(columnNames[i], columnNames[j], sep = " - ")
-      
-      if (length(topValues) < 10 || value > min(topValues)) {
-        if (length(topValues) >= 10) {
-          minIndex <- which.min(topValues)
-          topValues <- topValues[-minIndex]
-          topColumnPairs <- topColumnPairs[-minIndex]
-        }
-        topValues <- c(topValues, value)
-        topColumnPairs <- c(topColumnPairs, columnPair)
-      }
-      
-      if (length(bottomValues) < 10 || value < max(bottomValues)) {
-        if (length(bottomValues) >= 10) {
-          maxIndex <- which.max(bottomValues)
-          bottomValues <- bottomValues[-maxIndex]
-          bottomColumnPairs <- bottomColumnPairs[-maxIndex]
-        }
-        bottomValues <- c(bottomValues, value)
-        bottomColumnPairs <- c(bottomColumnPairs, columnPair)
-      }
-    }
+overallSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
+
+# Calculate overall similarity using mixed type data using lambda = 0.5 to give equal weight to both
+for (i in 1:numberOfRows) {
+  for (j in 1:numberOfRows) {
+    # Using l1norm for the overall similarity
+    overallSimilarities[i, j] <- 0.5 * l1Similarities[i, j] + (1 - 0.5) * categoricalSimilarities[i, j]
   }
-  
-  result <- list(
-    topValues = topValues,
-    topColumnPairs = topColumnPairs,
-    bottomValues = bottomValues,
-    bottomColumnPairs = bottomColumnPairs
-  )
-  
-  return(result)
 }
 
-topAndBottom <- findTopAndBottomPairs(l1Similarities, quantitativeColumns)
+# Normalize quantitativeData for a more unbiased similarity between that and categoricalData
+scaledData <- scale(quantitativeData)
+quantitativeData[, sapply(quantitativeData, is.numeric)] <- scaledData
 
-topValues <- topAndBottom$topValues
-topColumnPairs <- topAndBottom$topColumnPairs
-bottomValues <- topAndBottom$bottomValues
-bottomColumnPairs <- topAndBottom$bottomColumnPairs
+overallNormalizedSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
-cat("Top 10 Greatest L1 Similarities:\n")
-for (i in 1:10) {
-  cat(paste("Pair:", topColumnPairs[i], "- Value:", topValues[i], "\n"))
+# Normalize L1 Similarities for normalized overall similarities
+normalizedL1Similarities <- scale(l1Similarities)
+
+# Calculate overall similarities again
+for (i in 1:numberOfRows) {
+  for (j in 1:numberOfRows) {
+    overallNormalizedSimilarities[i, j] <- 0.5 * normalizedL1Similarities[i, j] * (1 - 0.5) * categoricalSimilarities[i, j]
+  }
 }
-
-cat("\nBottom 10 Smallest L1 Similarities:\n")
-for (i in 1:10) {
-  cat(paste("Pair:", bottomColumnPairs[i], "- Value:", bottomValues[i], "\n"))
-}
-
-categoricalData <- fundamentalsData[, categoricalColumns ]
