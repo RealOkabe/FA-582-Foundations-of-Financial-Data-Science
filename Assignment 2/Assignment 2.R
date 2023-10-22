@@ -150,6 +150,8 @@ categoricalSimilarities <- matrix(0, nrow = numberOfRows, ncol = numberOfRows)
 
 quantitativeData <- sapply(quantitativeData, as.numeric)
 
+normalizedQuantitativeData <- scale(quantitativeData)
+
 # Calculate distances and similarities across rows
 for (i in 1:numberOfRows) {
   for (j in 1:numberOfRows) {
@@ -168,7 +170,9 @@ for (i in 1:numberOfRows) {
       l10Similarities[i, j] <- as.numeric(calculateLpSimilarityRow(quantitativeData[i, ], quantitativeData[j, ], 10))
       
       # Calculate the Mahalanobis distance between row i and row j using normalized data because it was not possible using regular data
-      mahalanobisDistances[i, j] <- mahalanobis(normalizedQuantitativeData[i, , drop = FALSE], normalizedQuantitativeData[j, , drop = FALSE], cov(normalizedQuantitativeData))
+      mahalanobisDistances[i, j] <- mahalanobis(normalizedQuantitativeData[i, , drop = FALSE], 
+                                                normalizedQuantitativeData[j, , drop = FALSE], 
+                                                cov(normalizedQuantitativeData))
       
       # Calculate Match Similarity directly within the assignment
       matchSimilarities[i, j] <- calculateMatchSimilarityRow(quantitativeData[i, ], quantitativeData[j, ])
@@ -288,14 +292,16 @@ printTopAndBottomValues <- function(top10Values, bottom10Values, dataframe) {
   cat("Ticker1.Symbol\tTicker2.Symbol\tValue\n")
   cat("--------------\t--------------\t-----\n")
   for (i in 1:nrow(top10Values)) {
-    cat("   ", format(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", format(dataframe[top10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), top10Values[i, ]$value, "\n")
+    cat("   ", format(dataframe[(top10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", 
+        format(dataframe[top10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), top10Values[i, ]$value, "\n")
   }
   cat("Bottom Pairs:\n")
   cat("--------------\t--------------\t-----\n")
   cat("Ticker1.Symbol\tTicker2.Symbol\tValue\n")
   cat("--------------\t--------------\t-----\n")
   for (i in 1:nrow(bottom10Values)) {
-    cat("   ", format(dataframe[(bottom10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", format(dataframe[bottom10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), bottom10Values[i, ]$value, "\n")
+    cat("   ", format(dataframe[(bottom10Values[i, ]$index1), ]$Ticker.Symbol, width = 13), "  ", 
+        format(dataframe[bottom10Values[i, ]$index2, ]$Ticker.Symbol, width = 10), bottom10Values[i, ]$value, "\n")
   }
 }
 
