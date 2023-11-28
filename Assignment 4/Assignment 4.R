@@ -118,3 +118,130 @@ logisticPred <- predict(logisticModel, newdata = testSet, type = "response")
 logisticPredBinary <- ifelse(logisticPred > 0.5, 1, 0)
 cmLogistic <- table(Predicted = logisticPredBinary, Actual = testSet$Purchase)
 cmLogistic
+
+# Problem 3
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Generate data for three classes
+class1 <- matrix(rnorm(20 * 50, mean = 0, sd = 1), ncol = 50)
+class2 <- matrix(rnorm(20 * 50, mean = 3, sd = 1), ncol = 50)
+class3 <- matrix(rnorm(20 * 50, mean = -3, sd = 1), ncol = 50)
+
+# Combine data for all classes
+simulatedData <- rbind(class1, class2, class3)
+
+# True class labels
+trueLabels <- rep(1:3, each = 20)
+
+# Perform PCA
+pcaResult <- prcomp(simulatedData, center = TRUE, scale. = TRUE)
+
+# Extract the first two principal components
+pcScores <- pcaResult$x[, 1:2]
+
+# Plot the first two principal component score vectors
+plot(pcScores, col = rep(1:3, each = 20), pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA of Simulated Data")
+
+# Add legend
+legend("topright", legend = c("Class 1", "Class 2", "Class 3"), col = 1:3, pch = 19)
+
+performKMeans <- function(data, trueLabels, K) {
+  # Perform K-means clustering
+  kmeansResult <- kmeans(data, centers = K, nstart = 20)
+  
+  # Extract cluster assignments
+  clusterAssignments <- kmeansResult$cluster
+  
+  # Plot the first two principal component score vectors with cluster colors
+  plot(pcScores, col = clusterAssignments, pch = 19, xlab = "PC1", ylab = "PC2", 
+       main = paste("K-means Clustering (K =", K, ")"))
+  
+  # Add cluster centers to the plot
+  points(kmeansResult$centers[, 1:2], col = 1:K, pch = 3, cex = 2)
+  
+  # Add legend
+  legend("topright", legend = c(paste("Cluster", 1:K), "Cluster Centers"), 
+         col = c(1:K, 1:K), pch = c(rep(19, K), 3))
+  
+  # Compare true class labels with K-means cluster assignments
+  comparisonTable <- table(trueLabels, clusterAssignments)
+  cat("Contingency Table (K =", K, "):\n", comparisonTable, "\n")
+  
+  # Calculate the accuracy (proportion of correctly classified instances)
+  accuracy <- sum(diag(comparisonTable)) / sum(comparisonTable)
+  cat("Accuracy:", accuracy, "\n\n")
+  
+  # Return the cluster assignments for further analysis if needed
+  return(clusterAssignments)
+}
+
+# Perform k means clustering with diferrent values of k
+performKMeans(simulatedData, trueLabels, 3)
+
+performKMeans(simulatedData, trueLabels, 2)
+
+performKMeans(simulatedData, trueLabels, 4)
+
+# Perform K-means clustering with K = 3 on the first two principal components
+kmeansResult <- kmeans(pcScores, centers = 3, nstart = 20)
+
+# Extract cluster assignments
+clusterAssignments <- kmeansResult$cluster
+
+# Plot the first two principal component score vectors with cluster colors
+plot(pcScores, col = clusterAssignments, pch = 19, xlab = "PC1", ylab = "PC2", main = "K-means Clustering (PC1 and PC2)")
+
+# Add cluster centers to the plot
+points(kmeansResult$centers[, 1:2], col = 1:3, pch = 3, cex = 2)
+
+# Add legend
+legend("topright", legend = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster Centers"), col = c(1:3, 1:3), pch = c(19, 19, 19, 3))
+
+# Compare true class labels with K-means cluster assignments
+comparisonTable <- table(trueLabels, clusterAssignments)
+cat("Contingency Table:\n", comparisonTable, "\n")
+
+# Calculate the accuracy (proportion of correctly classified instances)
+accuracy <- sum(diag(comparisonTable)) / sum(comparisonTable)
+cat("Accuracy:", accuracy, "\n")
+
+# Scale the data to have standard deviation one for each variable
+scaledData <- scale(simulatedData)
+
+# Perform PCA on the scaled data
+pcaResult <- prcomp(scaledData, center = TRUE, scale. = FALSE)  # Scaling is already done
+
+# Extract the first two principal components
+pcScores <- pcaResult$x[, 1:2]
+
+# Plot the first two principal component score vectors
+plot(pcScores, col = rep(1:3, each = 20), pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA of Scaled Data")
+
+# Add legend
+legend("topright", legend = c("Class 1", "Class 2", "Class 3"), col = 1:3, pch = 19)
+
+# Perform K-means clustering with K = 3 on the scaled data
+kmeansResult <- kmeans(scaledData, centers = 3, nstart = 20)
+
+# Extract cluster assignments
+clusterAssignments <- kmeansResult$cluster
+
+# Plot the first two principal component score vectors with cluster colors
+plot(pcScores, col = clusterAssignments, pch = 19, xlab = "PC1", ylab = "PC2", main = "K-means Clustering on Scaled Data")
+
+# Add cluster centers to the plot
+points(kmeansResult$centers[, 1:2], col = 1:3, pch = 3, cex = 2)
+
+# Add legend
+legend("topright", legend = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster Centers"), col = c(1:3, 1:3), pch = c(19, 19, 19, 3))
+
+# Compare true class labels with K-means cluster assignments
+comparisonTable <- table(trueLabels, clusterAssignments)
+cat("Contingency Table:\n", comparisonTable, "\n")
+
+# Calculate the accuracy (proportion of correctly classified instances)
+accuracy <- sum(diag(comparisonTable)) / sum(comparisonTable)
+cat("Accuracy:", accuracy, "\n")
+
